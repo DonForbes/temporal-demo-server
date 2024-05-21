@@ -3,6 +3,7 @@ package com.donald.demo.temporaldemoserver.hello;
 import java.time.Duration;
 
 import org.slf4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.donald.demo.temporaldemoserver.hello.model.Person;
 
@@ -10,6 +11,7 @@ import io.temporal.activity.ActivityOptions;
 import io.temporal.spring.boot.WorkflowImpl;
 import io.temporal.workflow.Workflow;
 import io.temporal.workflow.WorkflowInterface;
+
 
 @WorkflowImpl(taskQueues = "HelloDemoTaskQueue")
 public class HelloWorkflowImpl implements HelloWorkflow {

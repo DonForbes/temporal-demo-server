@@ -9,7 +9,7 @@ spring:
     namespace: donald-demo.sdvdw
     workersAutoDiscovery:
       packages: 
-      - com.donald.demo.temporaldemoserver.hello
+        - com.donald.demo.temporaldemoserver
     connection:
       target: donald-demo.sdvdw.tmprl.cloud:7233
       mtls:

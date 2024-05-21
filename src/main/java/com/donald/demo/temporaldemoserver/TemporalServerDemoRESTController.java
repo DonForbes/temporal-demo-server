@@ -13,34 +13,80 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.donald.demo.temporaldemoserver.hello.HelloWorkflow;
+import com.donald.demo.temporaldemoserver.hello.HelloWorkflowImpl;
 import com.donald.demo.temporaldemoserver.hello.model.Person;
-
+import com.donald.demo.temporaldemoserver.transfermoney.TransferMoneyWorkflow;
+import com.donald.demo.temporaldemoserver.transfermoney.TransferMoneyWorkflowImpl;
+import com.donald.demo.temporaldemoserver.transfermoney.model.MoneyTransfer;
+import com.donald.demo.temporaldemoserver.transfermoney.model.MoneyTransferResponse;
+import com.donald.demo.temporaldemoserver.transfermoney.util.IdGenerator;
 
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowOptions;
+import io.temporal.worker.Worker;
+import io.temporal.worker.WorkerFactory;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
 
 @RestController
+// @CrossOrigin(origins = "http://localhost:8080")
+@CrossOrigin()
 public class TemporalServerDemoRESTController {
   private static final Logger logger = LoggerFactory.getLogger(TemporalServerDemoRESTController.class);
 
-  @Autowired WorkflowClient client;
+  @Autowired
+  WorkflowClient client;
 
-  @CrossOrigin(origins = "http://localhost:8080")
-  @PostMapping("hello-world")  
-  public ResponseEntity<String> helloWorld(@RequestBody Person person)  {
+
+
+
+  @PostMapping("hello-world")
+  public ResponseEntity<String> helloWorld(@RequestBody Person person) {
     logger.debug("Entered helloWorld controller method");
     String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
 
-     HelloWorkflow workflow =
-        client.newWorkflowStub(
-            HelloWorkflow.class,
-            WorkflowOptions.newBuilder()
-                .setTaskQueue("HelloDemoTaskQueue")
-                .setWorkflowId("HelloDemo"+ timeStamp)
-                .build());
+    this.registerWorker("HelloDemoTaskQueue", HelloWorkflowImpl.class);
 
-     return new ResponseEntity<>("\"" + workflow.sayHello(person) + "\"", HttpStatus.OK);
+    HelloWorkflow workflow = client.newWorkflowStub(
+        HelloWorkflow.class,
+        WorkflowOptions.newBuilder()
+            .setTaskQueue("HelloDemoTaskQueue")
+            .setWorkflowId("HelloDemo" + timeStamp)
+            .build());
+
+    return new ResponseEntity<>("\"" + workflow.sayHello(person) + "\"", HttpStatus.OK);
+  }
+
+  @PostMapping("money-transfer")
+  public String transferMoney(@RequestBody MoneyTransfer transferRequest) {
+    logger.debug("Entered tranferMoney controller method");
+    String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+
+    this.registerWorker("TransferMoneyDemoTaskQueue", TransferMoneyWorkflowImpl.class);
+    logger.info(transferRequest.toString());
+
+    String workflowID = IdGenerator.generateWorkflowId();
+
+
+    TransferMoneyWorkflow workflow = client.newWorkflowStub(
+        TransferMoneyWorkflow.class,
+        WorkflowOptions.newBuilder()
+            .setTaskQueue("TransferMoneyDemoTaskQueue")
+            .setWorkflowId(workflowID)
+            .build());
+
+        
+        WorkflowClient.start(workflow::transfer, transferRequest);
+     
+     return "\"/money-transfer-details?workflowID=" + workflowID + "\"";
+  } // End transferMoney
+
+
+  private void registerWorker(String taskQueue, Class<?> registerWorkflowClass)  {
+      // Activities seem OK so it might be just wthe workflows we need to get a worker for.
+      WorkerFactory factory = WorkerFactory.newInstance(client);
+      Worker worker = factory.newWorker(taskQueue);
+      worker.registerWorkflowImplementationTypes(registerWorkflowClass);
+      factory.start();
   }
 }
