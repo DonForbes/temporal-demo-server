@@ -12,6 +12,7 @@ public class MoneyTransfer {
     private String toAccountAsString;
     private ExecutionScenario workflowOption;
     private String amount;
+    private String idempotencyKey;
 
 
     public void setToAccountAsString(String toAccountDetails)

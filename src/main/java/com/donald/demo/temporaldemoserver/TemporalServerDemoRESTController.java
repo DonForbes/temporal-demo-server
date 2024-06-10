@@ -21,6 +21,9 @@ import com.donald.demo.temporaldemoserver.transfermoney.model.MoneyTransfer;
 import com.donald.demo.temporaldemoserver.transfermoney.model.MoneyTransferResponse;
 import com.donald.demo.temporaldemoserver.transfermoney.util.IdGenerator;
 
+import io.temporal.api.common.v1.WorkflowExecution;
+import io.temporal.api.workflowservice.v1.DescribeWorkflowExecutionRequest;
+import io.temporal.api.workflowservice.v1.DescribeWorkflowExecutionResponse;
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowOptions;
 import io.temporal.worker.Worker;
@@ -62,7 +65,7 @@ public class TemporalServerDemoRESTController {
     logger.debug("Entered tranferMoney controller method");
     String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
 
-    this.registerWorker("TransferMoneyDemoTaskQueue", TransferMoneyWorkflowImpl.class);
+   // this.registerWorker("TransferMoneyDemoTaskQueue", TransferMoneyWorkflowImpl.class);
     logger.info(transferRequest.toString());
 
     String workflowID = IdGenerator.generateWorkflowId();
@@ -76,7 +79,16 @@ public class TemporalServerDemoRESTController {
             .build());
 
         
-        WorkflowClient.start(workflow::transfer, transferRequest);
+        WorkflowExecution wfExecution = WorkflowClient.start(workflow::transfer, transferRequest);
+
+        DescribeWorkflowExecutionRequest request =
+                              DescribeWorkflowExecutionRequest.newBuilder()
+                                             .setNamespace(client.getOptions().getNamespace())
+                                             .setExecution(WorkflowExecution.newBuilder().setWorkflowId(workflowID))
+                                             .build();
+        DescribeWorkflowExecutionResponse response = client.getWorkflowServiceStubs().blockingStub().describeWorkflowExecution(request);
+
+        logger.debug("workflow started with status - " + response.getWorkflowExecutionInfo().getStatus());
      
      return "\"/money-transfer-details?workflowID=" + workflowID + "\"";
   } // End transferMoney

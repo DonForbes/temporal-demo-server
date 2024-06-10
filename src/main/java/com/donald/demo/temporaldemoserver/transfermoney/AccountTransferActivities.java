@@ -1,6 +1,7 @@
 package com.donald.demo.temporaldemoserver.transfermoney;
 
-import com.donald.demo.temporaldemoserver.transfermoney.model.ExecutionScenario;
+
+import com.donald.demo.temporaldemoserver.transfermoney.model.MoneyTransfer;
 import com.donald.demo.temporaldemoserver.transfermoney.model.MoneyTransferResponse;
 
 import io.temporal.activity.ActivityInterface;
@@ -8,14 +9,12 @@ import io.temporal.activity.ActivityInterface;
 @ActivityInterface
 public interface AccountTransferActivities {
 
-    Boolean validate(ExecutionScenario scenario);
+    Boolean validate(MoneyTransfer moneyTransfer);
+ 
+    boolean withdraw(MoneyTransfer moneyTransfer);
 
- /*
-     String withdraw(float amount, ExecutionScenario scenario);
+    boolean deposit (MoneyTransfer moneyTransfer);
 
-    MoneyTransferResponse deposit (String idempotencyKey, float amount, ExecutionScenario scenario);
-
-    boolean undoWithdraw(float amount);
-*/
+    boolean undoWithdraw(MoneyTransfer moneyTransfer);
 
 }

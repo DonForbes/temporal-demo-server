@@ -7,9 +7,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class MoneyTransferState {
 
-    private int approvalTime = 0;
+    private int approvalTime = 30;
+    private String approvedTime = "";
+    private boolean approvalRequired = false;
     private int progressPercentage = 0;
     private String transferState = "NEW";
     private String workflowStatus = "NEW";
-    private MoneyTransferResponse moneyTransferResponse;
+
+    private MoneyTransferResponse moneyTransferResponse = new MoneyTransferResponse();
 }

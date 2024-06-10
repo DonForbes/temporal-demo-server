@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class MoneyTransferResponse {
-    private String chargeId;
+    private String chargeId = "Not Set";
+    private String withdrawId = "Not Set";
 
 }
