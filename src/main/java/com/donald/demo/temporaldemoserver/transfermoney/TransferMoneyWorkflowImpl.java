@@ -14,6 +14,7 @@ import com.donald.demo.temporaldemoserver.transfermoney.model.ExecutionScenario;
 import com.donald.demo.temporaldemoserver.transfermoney.model.MoneyTransfer;
 import com.donald.demo.temporaldemoserver.transfermoney.model.MoneyTransferResponse;
 import com.donald.demo.temporaldemoserver.transfermoney.model.MoneyTransferState;
+import com.donald.demo.temporaldemoserver.transfermoney.model.TransferState;
 import com.donald.demo.temporaldemoserver.transfermoney.util.IdGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -46,12 +47,12 @@ public class TransferMoneyWorkflowImpl implements TransferMoneyWorkflow {
         //  ***************************
         if  (activity.validate(moneyTransfer) == false) {
            moneyTransferState.setProgressPercentage(100);
-           moneyTransferState.setTransferState("VALIDATION_FAILED");
+           moneyTransferState.setTransferState(TransferState.VALIDATION_FAILED);
            moneyTransferState.setWorkflowStatus("FAILED");
 
            throw ApplicationFailure.newFailure("The transfer failed to validate.", "ValidateionFailure");
         }
-        moneyTransferState.setTransferState("VALIDATED");
+        moneyTransferState.setTransferState(TransferState.VALIDATED);
         moneyTransferState.setProgressPercentage(40);
 
         //  ***************************
@@ -59,27 +60,33 @@ public class TransferMoneyWorkflowImpl implements TransferMoneyWorkflow {
         //  ***************************
         if ((moneyTransfer.getWorkflowOption() == ExecutionScenario.HUMAN_IN_LOOP) | (Long.parseLong(moneyTransfer.getAmount()) > 10000) )
         {
-            moneyTransferState.setApprovalRequired(false);
+            moneyTransferState.setApprovalRequired(true);
             boolean receivedSignal = Workflow.await(Duration.ofSeconds(moneyTransferState.getApprovalTime()), () -> moneyTransferState.getApprovedTime() != "");
 
             if (!receivedSignal) {
                 logger.error("Approval not received within the time limit.  Failing the workflow");
-                throw ApplicationFailure.newFailure("Transfer nto approved within timelimit.", "ApprovalTimeout");
+                moneyTransferState.setTransferState(TransferState.APPROVAL_TIMED_OUT);
+                throwApplicationFailure("Transfer not approved within timelimit.", "ApprovalTimeout", null);
             }
+            else
+                moneyTransferState.setTransferState(TransferState.APPROVED);
         }
-
+ 
         //  ***************************
         //  ***     WITHDRAWAL      ***
         //  ***************************
         if (activity.withdraw(moneyTransfer))
             moneyTransferState.getMoneyTransferResponse().setWithdrawId(IdGenerator.generateTransferId());
         else
-            throw ApplicationFailure.newFailure("Withdrawal Failed to complete successsfully.", "WithdrawalFailure", null);
+        {
+            moneyTransferState.setTransferState(TransferState.WITHDRAW_FAILED);
+            throwApplicationFailure("Withdrawal Failed to complete successsfully.", "WithdrawalFailure", null);
+        }
 
-        moneyTransferState.setTransferState("FUNDS_WITHDRAWN");
+        moneyTransferState.setTransferState(TransferState.FUNDS_WITHDRAWN);
         moneyTransferState.setProgressPercentage(50);
 
-        Workflow.sleep(Duration.ofSeconds(3));
+        Workflow.sleep(Duration.ofSeconds(4));
 
         //  ***************************
         //  ***      DEPOSIT        ***
@@ -87,18 +94,28 @@ public class TransferMoneyWorkflowImpl implements TransferMoneyWorkflow {
         if (activity.deposit(moneyTransfer))
             moneyTransferState.getMoneyTransferResponse().setChargeId(IdGenerator.generateTransferId());
         else
-            throw ApplicationFailure.newFailure("Deposit Failed to complete successsfully.", "DepositFailure", null);
+        {
+            moneyTransferState.setTransferState(TransferState.DEPSIT_FAILED);
+            throwApplicationFailure("Deposit Failed to complete successsfully.", "DepositFailure", null);
+        }
 
-        moneyTransferState.setTransferState("FUNDS_DEPOSITED");
+        moneyTransferState.setTransferState(TransferState.FUNDS_DEPOSITED);
         moneyTransferState.setProgressPercentage(70);
 
         Workflow.sleep(Duration.ofSeconds(3));
 
         moneyTransferState.setProgressPercentage(100);
-        moneyTransferState.setTransferState("COMPLETED");
+        moneyTransferState.setTransferState(TransferState.COMPLETED);
         moneyTransferState.setWorkflowStatus("COMPLETED");
         return moneyTransferState.getMoneyTransferResponse();
     }
+
+    private void throwApplicationFailure(String message, String type, Object details) throws ApplicationFailure
+    {
+        moneyTransferState.setWorkflowStatus("FAILED");
+        throw ApplicationFailure.newFailure(message, type, details);      
+    }// End throwApplicationFailure
+
 
     @Override
     public MoneyTransferState getStateQuery() throws JsonProcessingException {

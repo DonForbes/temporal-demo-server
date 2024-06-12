@@ -11,7 +11,7 @@ public class MoneyTransferState {
     private String approvedTime = "";
     private boolean approvalRequired = false;
     private int progressPercentage = 0;
-    private String transferState = "NEW";
+    private TransferState transferState = TransferState.NEW;
     private String workflowStatus = "NEW";
 
     private MoneyTransferResponse moneyTransferResponse = new MoneyTransferResponse();
