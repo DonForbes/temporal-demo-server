@@ -27,7 +27,7 @@ import io.temporal.workflow.Workflow;
 @WorkflowImpl(taskQueues = "TransferMoneyDemoTaskQueue")
 public class TransferMoneyWorkflowImpl implements TransferMoneyWorkflow {
     private MoneyTransferState moneyTransferState = new MoneyTransferState();
-
+    
     public static final Logger logger = Workflow.getLogger(TransferMoneyWorkflowImpl.class);
 
     private AccountTransferActivities activity = Workflow.newActivityStub(
@@ -39,9 +39,10 @@ public class TransferMoneyWorkflowImpl implements TransferMoneyWorkflow {
         logger.debug(("Entered - transfer method started."));
         moneyTransferState.setProgressPercentage(10);
         moneyTransferState.setWorkflowStatus("RUNNING");
-
+        moneyTransferState.setWorkflowId(Workflow.getInfo().getWorkflowId());
+      
         Workflow.sleep(Duration.ofSeconds(5));
-        
+
         //  ***************************
         //  ***     VALIDATION      ***
         //  ***************************
