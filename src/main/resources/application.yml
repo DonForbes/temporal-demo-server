@@ -16,24 +16,36 @@ spring:
       mtls:
         key-file: /Users/donald/stuff/source/certificates/temporal-client.key
         cert-chain-file: /Users/donald/stuff/source/certificates/temporal-client-leaf.pem
-# (Note following configuration are not set by default but serve more as reference)
+    # (Note following configuration are not set by default but serve more as reference)
     workers:
       - task-queue: HelloDemoTaskQueue
-      - task-queue: TransferMoneyDemoTaskQueue
-        name: demoWorker
-        workflow-classes: [
-            com.donald.demo.temporaldemoserver.hello.HelloWorkflowImpl,
-            com.donald.demo.temporaldemoserver.transfermoney.TransferMoneyWorkflowImpl ]
-        activity-beans:
-       #   - HelloActivityImpl
-       #   - AccountTransferActivities
+        name: HelloDemoWorker
+        workflow-classes:
+          - com.donald.demo.temporaldemoserver.hello.HelloWorkflowImpl
         capacity:
           max-concurrent-workflow-task-pollers: 6
           max-concurrent-activity-task-pollers: 6
-        rate-limits:
+        rate-limits:                                   #  server side rate limiting
           max-worker-activities-per-second: 3
-          max-task-queue-activities-per-second: 3                                            # server side rate limiting
-    workflow-cache:
-      max-instances: 10
-      max-threads: 10
+          max-task-queue-activities-per-second: 3
+
+      - task-queue: TransferMoneyDemoTaskQueue
+        name: TransferDemoWorker
+        workflow-classes:
+          - com.donald.demo.temporaldemoserver.transfermoney.TransferMoneyWorkflowImpl
+
+      - task-queue: ManageNamespaceWFTaskQueue
+        name: OpsWFDemoWorker
+        workflow-classes:
+          - com.donald.demo.temporaldemoserver.namespace.workflows.ManageNamespaceImpl
+      - task-queue: ManageNamespaceActivityTaskQueue
+        name: OpsActivityDemoWorker
+        workflow-classes:
+        activity-beans:
+        #   - HelloActivityImpl
+        #   - AccountTransferActivities
+                                               
+    workflow-cache:  
+      max-instances: 100
+      max-threads: 100
 

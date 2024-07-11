@@ -28,13 +28,13 @@
 		<dependency>
 			<groupId>io.temporal</groupId>
 			<artifactId>temporal-sdk</artifactId>
-			<version>1.23.2</version>
+			<version>1.24.1</version>
 			<optional>true</optional>
 		</dependency>
 		<dependency>
 		    <groupId>io.temporal</groupId>
-			<artifactId>temporal-spring-boot-starter-alpha</artifactId>
-			<version>1.23.2</version>
+			<artifactId>temporal-spring-boot-starter</artifactId>
+			<version>1.24.1</version>
 			<optional>true</optional>
 		</dependency>
 		<dependency>

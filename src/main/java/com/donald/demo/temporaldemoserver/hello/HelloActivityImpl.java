@@ -7,7 +7,7 @@ import com.donald.demo.temporaldemoserver.hello.model.Person;
 import io.temporal.spring.boot.ActivityImpl;
 
 @Component
-@ActivityImpl(taskQueues = "HelloDemoTaskQueue", workers = "demoWorker" )
+@ActivityImpl(taskQueues = "HelloDemoTaskQueue")
 public class HelloActivityImpl implements HelloActivity {
 
     @Override

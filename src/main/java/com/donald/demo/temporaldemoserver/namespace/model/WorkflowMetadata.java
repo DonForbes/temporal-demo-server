@@ -1,0 +1,22 @@
+package com.donald.demo.temporaldemoserver.namespace.model;
+
+import lombok.Data;
+
+@Data
+public class WorkflowMetadata {
+    private String apiKey;
+    private Boolean isNewNamespace;
+    private int manageNamespaceTimeoutMins;
+
+    public void setManageNamespaceTimeoutMins(int timeout)
+    {
+        if (timeout < 1)
+        { 
+            System.out.println("Timeout requested too short defaulting to 10 minutes.");
+            this.manageNamespaceTimeoutMins=10;
+        }
+        else {
+            this.manageNamespaceTimeoutMins=timeout;
+        }
+    }
+}
