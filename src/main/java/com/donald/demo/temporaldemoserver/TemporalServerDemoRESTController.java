@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.donald.demo.temporaldemoserver.hello.HelloWorkflow;
 import com.donald.demo.temporaldemoserver.hello.HelloWorkflowImpl;
 import com.donald.demo.temporaldemoserver.hello.model.Person;
+import com.donald.demo.temporaldemoserver.namespace.model.CloudOperationsServerConfig;
 import com.donald.demo.temporaldemoserver.transfermoney.TransferMoneyWorkflow;
 import com.donald.demo.temporaldemoserver.transfermoney.TransferMoneyWorkflowImpl;
 import com.donald.demo.temporaldemoserver.transfermoney.model.MoneyTransfer;

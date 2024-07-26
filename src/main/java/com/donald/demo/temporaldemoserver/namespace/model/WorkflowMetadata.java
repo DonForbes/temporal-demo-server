@@ -6,6 +6,7 @@ import lombok.Data;
 public class WorkflowMetadata {
     private String apiKey;
     private Boolean isNewNamespace;
+    private Boolean nsDataGathered;
     private int manageNamespaceTimeoutMins;
 
     public void setManageNamespaceTimeoutMins(int timeout)

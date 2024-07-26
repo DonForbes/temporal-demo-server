@@ -2,6 +2,17 @@ server:
    address: 0.0.0.0
    port: 8090
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus,temporalworkerinfo
+
+cloud-operations-service:
+  host: localhost
+  port: 8091
+  protocol: http
+
 spring:
   application:
     name: Temporal Server Demonstration
@@ -34,17 +45,18 @@ spring:
         workflow-classes:
           - com.donald.demo.temporaldemoserver.transfermoney.TransferMoneyWorkflowImpl
 
-      - task-queue: ManageNamespaceWFTaskQueue
+      - task-queue: ManageNamespaceTaskQueue
         name: OpsWFDemoWorker
         workflow-classes:
           - com.donald.demo.temporaldemoserver.namespace.workflows.ManageNamespaceImpl
-      - task-queue: ManageNamespaceActivityTaskQueue
-        name: OpsActivityDemoWorker
-        workflow-classes:
-        activity-beans:
-        #   - HelloActivityImpl
-        #   - AccountTransferActivities
-                                               
+#        activity-beans:
+#          - com.donald.demo.temporaldemoserver.namespace.activities.CertificateManagementImpl
+
+#      - task-queue: ManageNamespaceActivityTaskQueue
+#        name: OpsActivityDemoWorker    
+#        activity-beans:
+#          - com.donald.demo.temporaldemoserver.namespace.activities.CertificateManagementImpl
+
     workflow-cache:  
       max-instances: 100
       max-threads: 100

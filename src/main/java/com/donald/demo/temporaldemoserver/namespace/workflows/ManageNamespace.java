@@ -16,7 +16,10 @@ public interface ManageNamespace {
     public CloudOperationsNamespace manageNamespace(WorkflowMetadata wfMetadata, CloudOperationsNamespace cloudOpsNamespace);
 
     @QueryMethod
-    public CloudOperationsNamespace getNamespace();
+    public CloudOperationsNamespace getNamespaceDetails();
+
+    @QueryMethod
+    public WorkflowMetadata getWFMetadata();
 
     @SignalMethod
     public void setNamespace(CloudOperationsNamespace cloudOpsNamespace);

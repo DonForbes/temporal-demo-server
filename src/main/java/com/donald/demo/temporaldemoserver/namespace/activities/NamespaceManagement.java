@@ -1,0 +1,13 @@
+package com.donald.demo.temporaldemoserver.namespace.activities;
+
+import com.donald.demo.temporaldemoserver.namespace.model.CloudOperationsNamespace;
+
+import io.temporal.activity.ActivityInterface;
+import io.temporal.activity.ActivityMethod;
+
+@ActivityInterface
+public interface NamespaceManagement {
+
+    @ActivityMethod
+    public CloudOperationsNamespace getExistingNamespace(CloudOperationsNamespace cloudOpsNamespace, String apiKey);
+}
