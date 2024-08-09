@@ -7,12 +7,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.donald.demo.temporaldemoserver.namespace.model.CloudOperations;
 import com.donald.demo.temporaldemoserver.namespace.model.CloudOperationsNamespace;
 import com.donald.demo.temporaldemoserver.namespace.model.CloudOperationsServerConfig;
+import com.donald.demo.temporaldemoserver.namespace.model.WorkflowMetadata;
 import com.donald.demo.temporaldemoserver.transfermoney.AccountTransferActivitiesImpl;
 
 import io.temporal.spring.boot.ActivityImpl;
@@ -29,10 +33,10 @@ public class NamespaceManagementImpl implements NamespaceManagement {
         // Method will query the cloudOps API to gather the namespace details for the
         // namespace identified in the parameter.
         URI uri = UriComponentsBuilder
-                    .fromUriString("{baseURI}/namespace/{namespace}")
-                    .queryParam("apiKey","{apiKey}")
-                    .buildAndExpand(cloudOpsServerConfig.getBaseURI(), pCloudOpsNamespace.getName(), apiKey)
-                    .toUri();
+                .fromUriString("{baseURI}/namespace/{namespace}")
+                .queryParam("apiKey", "{apiKey}")
+                .buildAndExpand(cloudOpsServerConfig.getBaseURI(), pCloudOpsNamespace.getName(), apiKey)
+                .toUri();
 
         logger.debug("The URI to be used is[{}]", uri.toString());
 
@@ -50,6 +54,47 @@ public class NamespaceManagementImpl implements NamespaceManagement {
                 })
                 .body(CloudOperationsNamespace.class);
 
-                return cloudOpsNS;
+        return cloudOpsNS;
+    }
+
+    @Override
+    public String createNamespace(CloudOperationsNamespace pCloudOpsNamespace, String apiKey) {
+        // Method will send the POST REST request to the cloud ops server to create the namespace.
+        URI uri = UriComponentsBuilder
+                .fromUriString("{baseURI}/namespace")
+                .buildAndExpand(cloudOpsServerConfig.getBaseURI())
+                .toUri();
+
+        logger.debug("The URI to be used is[{}]", uri.toString());
+
+        CloudOperations cloudOps = new CloudOperations();
+        WorkflowMetadata wfMetadata = new WorkflowMetadata();
+        wfMetadata.setApiKey(apiKey);
+        cloudOps.setWfMetadata(wfMetadata);
+        cloudOps.setCloudOpsNamespace(pCloudOpsNamespace);
+
+        String returnString = "Successful Create";
+        try {
+        ResponseEntity<Void> response = RestClient.create().post()
+                .uri(uri)
+                .accept(MediaType.APPLICATION_JSON)
+                .body(cloudOps)
+                .retrieve()
+                .toBodilessEntity();
+        }
+        catch (RestClientException ex)
+        {
+            logger.debug("Failed to post the namespace to the Temporal Operations [{}] ", ex.getMessage());
+            returnString = ex.getMessage();
+        }
+
+
+        return returnString;
+    }
+
+    @Override
+    public String updateNamespace(CloudOperationsNamespace cloudOpsNamespace, String apiKey) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'updateNamespace'");
     }
 }

@@ -22,6 +22,12 @@ public interface ManageNamespace {
     public WorkflowMetadata getWFMetadata();
 
     @SignalMethod
+    public void setPageDisplay(WorkflowMetadata wfMetadata);
+
+    @SignalMethod
     public void setNamespace(CloudOperationsNamespace cloudOpsNamespace);
+
+    @SignalMethod
+    public void createOrUpdateNamespace(CloudOperationsNamespace cloudOpsNamespace);
 
 }

@@ -23,6 +23,7 @@ import io.temporal.workflow.Workflow;
 public class ManageNamespaceImpl implements ManageNamespace {
     public static final Logger logger = Workflow.getLogger(ManageNamespaceImpl.class);
     private boolean changed=false;
+    private boolean processNamespace=false;
     private CloudOperationsNamespace cloudOpsNamespace = new CloudOperationsNamespace();
     private WorkflowMetadata wfMetadata;
     private CertificateManagement certManagement = Workflow.newActivityStub(
@@ -67,48 +68,79 @@ public class ManageNamespaceImpl implements ManageNamespace {
           if (changed)
           {
             // Reset changed back to true and await again
+            if (processNamespace){
+                logger.debug("User looking to create or update the namespace so continuing processing");
+                break;
+            }
+            else {
             logger.debug("changed set to true so changing it to be false and waiting a further [{}] minutes.", 
                                             wfMetadata.getManageNamespaceTimeoutMins());
             changed=false;
-            
+            }
           }
           else
           {  
             // Break out of the loop.
             logger.debug("The timer fired with no updates inbetween so we are completing the workflow with no actions.");
-            break;
+            return cloudOpsNamespace;
           }
         }
+
+        // Continuing processing update or new namespace
+
+        if (wfMetadata.getIsNewNamespace())
+         {
+            logger.debug("Creating a new namespace [{}]", cloudOpsNamespace.toString());
+            namespaceManagement.createNamespace(cloudOpsNamespace, wfMetadata.getApiKey());
+
+         }
+         else
+         {
+            logger.debug("Updating namespace [{}]", cloudOpsNamespace.getName());
+         }
 
         return cloudOpsNamespace;
     }
 
     @Override
     public CloudOperationsNamespace getNamespaceDetails() {
-        if (cloudOpsNamespace == null)
-        {
-            logger.debug("No namespace details setup yet, should not happen so returning blank values for now.");
-            //return new CloudOperationsNamespace();
-        }
-        else
-            logger.debug("return namespace to caller [{}]", cloudOpsNamespace.toString());
         return cloudOpsNamespace;
     }
 
     @Override
     public void setNamespace(CloudOperationsNamespace pCloudOpsNamespace) {
         logger.debug("MethodEntry - setNamespace called to set the values of the NS.");
+        updateNS(pCloudOpsNamespace);
         changed=true;
-        
-        // Only allowing the change to the retention period right now....
-        cloudOpsNamespace.setRetentionPeriod(pCloudOpsNamespace.getRetentionPeriod());
-        
     }
+
+    @Override
+    public void createOrUpdateNamespace(CloudOperationsNamespace pCloudOpsNamespace) {
+        logger.debug("MethodEntry - createOrUpdateNamespace called to set the values of the NS. [{}]", pCloudOpsNamespace);
+        processNamespace=true;   
+        updateNS(pCloudOpsNamespace);
+        changed=true;
+ 
+    }
+
+    private void updateNS(CloudOperationsNamespace pCloudOpsNamespace)
+    {
+        // Only allowing the change a few of the attributes just now
+        cloudOpsNamespace.setRetentionPeriod(pCloudOpsNamespace.getRetentionPeriod());
+        cloudOpsNamespace.setActiveRegion(pCloudOpsNamespace.getActiveRegion());
+        cloudOpsNamespace.setCodexEndPoint(pCloudOpsNamespace.getCodexEndPoint());
+    }  // End updateNS
 
     @Override
     public WorkflowMetadata getWFMetadata() {
         logger.debug("Returning Metadata to query - [{}]", wfMetadata.toString());
-        return this.wfMetadata;
+        return wfMetadata;
+    }
+
+    @Override
+    public void setPageDisplay(WorkflowMetadata pWFMetadata) {
+        // This method simply sets the page to be displayed in the wfMetadata object.
+        wfMetadata.setPageDisplay(pWFMetadata.getPageDisplay());
     }
 
 }

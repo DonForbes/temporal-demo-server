@@ -10,4 +10,11 @@ public interface NamespaceManagement {
 
     @ActivityMethod
     public CloudOperationsNamespace getExistingNamespace(CloudOperationsNamespace cloudOpsNamespace, String apiKey);
+
+    @ActivityMethod
+    public String createNamespace(CloudOperationsNamespace cloudOpsNamespace, String apiKey);
+
+    @ActivityMethod
+    public String updateNamespace(CloudOperationsNamespace cloudOpsNamespace, String apiKey);
+
 }
