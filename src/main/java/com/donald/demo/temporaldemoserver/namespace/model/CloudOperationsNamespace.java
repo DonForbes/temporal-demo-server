@@ -16,5 +16,5 @@ public class CloudOperationsNamespace {
     private Collection<CloudOperationsCertAuthority> certAuthorityPublicCerts;
     private String certAuthorityPublicCertificates;
     private Collection<CloudOperationsUser> cloudOpsUsers;
-    private String codexEndPoint;
+    private String codecEndPoint;
 }

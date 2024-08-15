@@ -49,6 +49,7 @@ spring:
         name: OpsWFDemoWorker
         workflow-classes:
           - com.donald.demo.temporaldemoserver.namespace.workflows.ManageNamespaceImpl
+          - com.donald.demo.temporaldemoserver.namespace.workflows.DeleteNamespaceImpl
 #        activity-beans:
 #          - com.donald.demo.temporaldemoserver.namespace.activities.CertificateManagementImpl
 

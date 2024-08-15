@@ -19,6 +19,7 @@ import com.donald.demo.temporaldemoserver.transfermoney.util.IdGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.temporal.activity.ActivityOptions;
+import io.temporal.failure.ActivityFailure;
 import io.temporal.failure.ApplicationFailure;
 import io.temporal.internal.worker.WorkflowExecutionException;
 import io.temporal.spring.boot.WorkflowImpl;
@@ -92,24 +93,31 @@ public class TransferMoneyWorkflowImpl implements TransferMoneyWorkflow {
         //  ***************************
         //  ***      DEPOSIT        ***
         //  ***************************
+        try {
         if (activity.deposit(moneyTransfer))
             moneyTransferState.getMoneyTransferResponse().setChargeId(IdGenerator.generateTransferId());
-        else
+            moneyTransferState.setTransferState(TransferState.FUNDS_DEPOSITED);
+        }
+        catch (ActivityFailure activityEx)
         {
-            moneyTransferState.setTransferState(TransferState.DEPSIT_FAILED);
-            throwApplicationFailure("Deposit Failed to complete successsfully.", "DepositFailure", null);
+            moneyTransferState.setTransferState(TransferState.DEPOSIT_FAILED);
+            activity.undoWithdraw(moneyTransfer);
         }
 
-        moneyTransferState.setTransferState(TransferState.FUNDS_DEPOSITED);
+
         moneyTransferState.setProgressPercentage(70);
 
         Workflow.sleep(Duration.ofSeconds(3));
 
         moneyTransferState.setProgressPercentage(100);
-        moneyTransferState.setTransferState(TransferState.COMPLETED);
+        if (moneyTransferState.getTransferState().toString().contains("FAIL"))
+            moneyTransferState.setTransferState(TransferState.COMPLETED_WITH_FAILURE);
+        else
+            moneyTransferState.setTransferState(TransferState.COMPLETED);
+
         moneyTransferState.setWorkflowStatus("COMPLETED");
         return moneyTransferState.getMoneyTransferResponse();
-    }
+    }  // End transfer
 
     private void throwApplicationFailure(String message, String type, Object details) throws ApplicationFailure
     {

@@ -17,4 +17,6 @@ public interface AccountTransferActivities {
 
     boolean undoWithdraw(MoneyTransfer moneyTransfer);
 
+    boolean compensate(MoneyTransfer moneyTransfer);
+
 }

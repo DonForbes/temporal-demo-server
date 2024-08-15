@@ -19,6 +19,8 @@ import com.donald.demo.temporaldemoserver.namespace.model.CloudOperationsServerC
 import com.donald.demo.temporaldemoserver.namespace.model.WorkflowMetadata;
 import com.donald.demo.temporaldemoserver.transfermoney.AccountTransferActivitiesImpl;
 
+import io.temporal.api.nexus.v1.Response;
+import io.temporal.failure.ApplicationFailure;
 import io.temporal.spring.boot.ActivityImpl;
 
 @Component
@@ -75,7 +77,7 @@ public class NamespaceManagementImpl implements NamespaceManagement {
 
         String returnString = "Successful Create";
         try {
-        ResponseEntity<Void> response = RestClient.create().post()
+        ResponseEntity response = RestClient.create().post()
                 .uri(uri)
                 .accept(MediaType.APPLICATION_JSON)
                 .body(cloudOps)
@@ -85,9 +87,13 @@ public class NamespaceManagementImpl implements NamespaceManagement {
         catch (RestClientException ex)
         {
             logger.debug("Failed to post the namespace to the Temporal Operations [{}] ", ex.getMessage());
-            returnString = ex.getMessage();
+            if (ex.getMessage().contains("INVALID_ARGUMENT")){
+                logger.debug("Arguments passed to create were invalid");
+                throw ApplicationFailure.newNonRetryableFailure("Failed to create namespace [" + ex.getMessage() + "]",  "Invalid-Parameters", null);
+            }
+            else    
+                throw ApplicationFailure.newFailureWithCause("Failed to create namespace.[" + ex.getMessage() + "]", "Operations-API-Failure", null);
         }
-
 
         return returnString;
     }
@@ -96,5 +102,55 @@ public class NamespaceManagementImpl implements NamespaceManagement {
     public String updateNamespace(CloudOperationsNamespace cloudOpsNamespace, String apiKey) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'updateNamespace'");
+    }
+
+    @Override
+    public String emailChanges(CloudOperationsNamespace cloudOpsNamespace) {
+        logger.debug("Pretending to send an e-mail to the users of this [{}] namespace to let them know of the changes.", cloudOpsNamespace.getName() );
+        try {
+            Thread.sleep(1500); // Making it slightly real
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } 
+        return "E-mail sent";
+    }
+
+    @Override
+    public String deleteNamespace(CloudOperationsNamespace cloudOpsNamespace, String apiKey) {
+        logger.debug("methodEntry - deleteNameslace for Namespace [{}]", cloudOpsNamespace.getName());
+        URI uri = UriComponentsBuilder
+            .fromUriString("{baseURI}/namespace/{namespaceName}")
+            .buildAndExpand(cloudOpsServerConfig.getBaseURI(), cloudOpsNamespace.getName())
+            .toUri();
+
+        logger.debug("The URI to be used is[{}]", uri.toString());
+
+
+        try {
+            ResponseEntity<Void> response = RestClient.create().delete()
+                    .uri(uri)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .header("Authorization", "Bearer " + apiKey)
+                    .retrieve()
+                    .toBodilessEntity();
+            }
+            catch (RestClientException ex)
+            {
+                logger.debug("Failed to delete the namespace to the Temporal Operations [{}] ", ex.getMessage());
+                return "Failed to delete namespace [" + ex.getMessage() + "]";
+            }
+
+        return "Namespace [" + cloudOpsNamespace.getName() + "] is being deleted.";
+    }
+
+    @Override
+    public String emailFailure(CloudOperationsNamespace cloudOpsNamespace) {
+        logger.debug("Pretending to send an e-mail to the users of this [{}] namespace to let them know the changes failed.", cloudOpsNamespace.getName() );
+        try {
+            Thread.sleep(1500); // Making it slightly real
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } 
+        return "Failure E-mail sent";
     }
 }

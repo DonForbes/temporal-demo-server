@@ -9,6 +9,7 @@ public class WorkflowMetadata {
     private Boolean nsDataGathered;
     private int manageNamespaceTimeoutMins;
     private int pageDisplay = 1;
+    private Boolean approved = false;
 
     public void setManageNamespaceTimeoutMins(int timeout)
     {

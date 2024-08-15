@@ -6,5 +6,6 @@ public enum ExecutionScenario {
     HUMAN_IN_LOOP,
     API_DOWNTIME,
     BUG_IN_WORKFLOW,
-    INVALID_ACCOUNT
+    INVALID_ACCOUNT,
+    FAIL_DEPOSIT
 }

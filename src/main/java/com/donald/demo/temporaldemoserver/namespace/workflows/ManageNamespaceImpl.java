@@ -18,87 +18,91 @@ import com.donald.demo.temporaldemoserver.namespace.model.WorkflowMetadata;
 import com.donald.demo.temporaldemoserver.transfermoney.AccountTransferActivities;
 
 import io.temporal.activity.ActivityOptions;
+import io.temporal.failure.ActivityFailure;
+import io.temporal.failure.ApplicationFailure;
 import io.temporal.workflow.Workflow;
 
 public class ManageNamespaceImpl implements ManageNamespace {
     public static final Logger logger = Workflow.getLogger(ManageNamespaceImpl.class);
-    private boolean changed=false;
-    private boolean processNamespace=false;
+    private boolean changed = false;
+    private boolean processNamespace = false;
     private CloudOperationsNamespace cloudOpsNamespace = new CloudOperationsNamespace();
     private WorkflowMetadata wfMetadata;
     private CertificateManagement certManagement = Workflow.newActivityStub(
-        CertificateManagement.class,
-        ActivityOptions.newBuilder().setStartToCloseTimeout(Duration.ofSeconds(30)).build());
+            CertificateManagement.class,
+            ActivityOptions.newBuilder().setStartToCloseTimeout(Duration.ofSeconds(30)).build());
     private NamespaceManagement namespaceManagement = Workflow.newActivityStub(
             NamespaceManagement.class,
             ActivityOptions.newBuilder().setStartToCloseTimeout(Duration.ofSeconds(30)).build());
 
     @Override
-    public CloudOperationsNamespace manageNamespace(WorkflowMetadata pWFMetadata, CloudOperationsNamespace pCloudOpsNamespace) {
+    public CloudOperationsNamespace manageNamespace(WorkflowMetadata pWFMetadata,
+            CloudOperationsNamespace pCloudOpsNamespace) {
         wfMetadata = pWFMetadata;
 
-        
-        if (wfMetadata.getIsNewNamespace())
-        {
-          logger.debug("Running workflow to create a new namespace.");
-          // Activity call to get the current CA.
-          cloudOpsNamespace.setName(pCloudOpsNamespace.getName());
-          CloudOperationsCertAuthority aCertAuth = certManagement.getCurrentCACert();
-          logger.debug("The cert authority details returned by the api contained [{}]", aCertAuth.toString());
-          Collection<CloudOperationsCertAuthority> certAuthorities = new ArrayList<>();
-          certAuthorities.add(aCertAuth);
-          cloudOpsNamespace.setCertAuthorityPublicCerts(certAuthorities);
-        }
-        else {
+        if (wfMetadata.getIsNewNamespace()) {
+            logger.debug("Running workflow to create a new namespace.");
+            // Activity call to get the current CA.
+            cloudOpsNamespace.setName(pCloudOpsNamespace.getName());
+            CloudOperationsCertAuthority aCertAuth = certManagement.getCurrentCACert();
+            logger.debug("The cert authority details returned by the api contained [{}]", aCertAuth.toString());
+            Collection<CloudOperationsCertAuthority> certAuthorities = new ArrayList<>();
+            certAuthorities.add(aCertAuth);
+            cloudOpsNamespace.setCertAuthorityPublicCerts(certAuthorities);
+        } else {
             logger.debug("Running workflow to gather existing NS details and allow editing.");
             cloudOpsNamespace = namespaceManagement.getExistingNamespace(pCloudOpsNamespace, wfMetadata.getApiKey());
-        } 
+        }
 
-        // Set data gathered to indicate to UI that we have queried the API and have the data, either initially for the CA only 
+        // Set data gathered to indicate to UI that we have queried the API and have the
+        // data, either initially for the CA only
         // or for all existing details.
         wfMetadata.setNsDataGathered(true);
 
-        // Keep workflow alive until it has remained untouched for more than the metadata duration time or it has completed successfully.
-        
-        while (!changed)
-        {
-          logger.debug("Current value of namespace [{}] just after initial population", cloudOpsNamespace.toString());
+        // Keep workflow alive until it has remained untouched for more than the
+        // metadata duration time or it has completed successfully.
 
-          Workflow.await(Duration.ofMinutes(wfMetadata.getManageNamespaceTimeoutMins()), () -> changed);
-          if (changed)
-          {
-            // Reset changed back to true and await again
-            if (processNamespace){
-                logger.debug("User looking to create or update the namespace so continuing processing");
-                break;
+        while (!changed) {
+            logger.debug("Current value of namespace [{}] just after initial population", cloudOpsNamespace.toString());
+
+            Workflow.await(Duration.ofMinutes(wfMetadata.getManageNamespaceTimeoutMins()), () -> changed);
+            if (changed) {
+                // Reset changed back to true and await again
+                if (processNamespace) {
+                    logger.debug("User looking to create or update the namespace so continuing processing");
+                    break;
+                } else {
+                    logger.debug("changed set to true so changing it to be false and waiting a further [{}] minutes.",
+                            wfMetadata.getManageNamespaceTimeoutMins());
+                    changed = false;
+                }
+            } else {
+                // Break out of the loop.
+                logger.debug(
+                        "The timer fired with no updates inbetween so we are completing the workflow with no actions.");
+                return cloudOpsNamespace;
             }
-            else {
-            logger.debug("changed set to true so changing it to be false and waiting a further [{}] minutes.", 
-                                            wfMetadata.getManageNamespaceTimeoutMins());
-            changed=false;
-            }
-          }
-          else
-          {  
-            // Break out of the loop.
-            logger.debug("The timer fired with no updates inbetween so we are completing the workflow with no actions.");
-            return cloudOpsNamespace;
-          }
         }
 
         // Continuing processing update or new namespace
 
-        if (wfMetadata.getIsNewNamespace())
-         {
-            logger.debug("Creating a new namespace [{}]", cloudOpsNamespace.toString());
-            namespaceManagement.createNamespace(cloudOpsNamespace, wfMetadata.getApiKey());
+        try {
+            if (wfMetadata.getIsNewNamespace()) {
+                logger.debug("Creating a new namespace [{}]", cloudOpsNamespace.toString());
 
-         }
-         else
-         {
-            logger.debug("Updating namespace [{}]", cloudOpsNamespace.getName());
-         }
+                namespaceManagement.createNamespace(cloudOpsNamespace, wfMetadata.getApiKey());
 
+            } else {
+                logger.debug("Updating namespace [{}]", cloudOpsNamespace.getName());
+            }
+            logger.debug("E-mailing users.  Result of mail [{}]", namespaceManagement.emailChanges(pCloudOpsNamespace));
+
+        } catch (ActivityFailure appEx) {
+            logger.debug("Failed to update/create the namespace. [{}]", appEx.getMessage());
+            logger.debug("E-mailing users.  Result of Failure mail [{}]",
+                    namespaceManagement.emailFailure(pCloudOpsNamespace));
+        }
+        
         return cloudOpsNamespace;
     }
 
@@ -111,25 +115,25 @@ public class ManageNamespaceImpl implements ManageNamespace {
     public void setNamespace(CloudOperationsNamespace pCloudOpsNamespace) {
         logger.debug("MethodEntry - setNamespace called to set the values of the NS.");
         updateNS(pCloudOpsNamespace);
-        changed=true;
+        changed = true;
     }
 
     @Override
     public void createOrUpdateNamespace(CloudOperationsNamespace pCloudOpsNamespace) {
-        logger.debug("MethodEntry - createOrUpdateNamespace called to set the values of the NS. [{}]", pCloudOpsNamespace);
-        processNamespace=true;   
+        logger.debug("MethodEntry - createOrUpdateNamespace called to set the values of the NS. [{}]",
+                pCloudOpsNamespace);
+        processNamespace = true;
         updateNS(pCloudOpsNamespace);
-        changed=true;
- 
+        changed = true;
+
     }
 
-    private void updateNS(CloudOperationsNamespace pCloudOpsNamespace)
-    {
+    private void updateNS(CloudOperationsNamespace pCloudOpsNamespace) {
         // Only allowing the change a few of the attributes just now
         cloudOpsNamespace.setRetentionPeriod(pCloudOpsNamespace.getRetentionPeriod());
         cloudOpsNamespace.setActiveRegion(pCloudOpsNamespace.getActiveRegion());
-        cloudOpsNamespace.setCodexEndPoint(pCloudOpsNamespace.getCodexEndPoint());
-    }  // End updateNS
+        cloudOpsNamespace.setCodecEndPoint(pCloudOpsNamespace.getCodecEndPoint());
+    } // End updateNS
 
     @Override
     public WorkflowMetadata getWFMetadata() {

@@ -17,4 +17,14 @@ public interface NamespaceManagement {
     @ActivityMethod
     public String updateNamespace(CloudOperationsNamespace cloudOpsNamespace, String apiKey);
 
+    @ActivityMethod
+    public String emailChanges(CloudOperationsNamespace cloudOpsNamespace);
+   
+    @ActivityMethod
+    public String emailFailure(CloudOperationsNamespace cloudOpsNamespace);
+   
+
+    @ActivityMethod
+    public String deleteNamespace(CloudOperationsNamespace cloudOpsNamespace, String apiKey);
+
 }
