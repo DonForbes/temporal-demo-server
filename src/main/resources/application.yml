@@ -45,13 +45,22 @@ spring:
         workflow-classes:
           - com.donald.demo.temporaldemoserver.transfermoney.TransferMoneyWorkflowImpl
 
-      - task-queue: ManageNamespaceTaskQueue
-        name: OpsWFDemoWorker
+      - name: OpsWFDemoWorker
+        task-queue: ManageNamespaceTaskQueue
         workflow-classes:
           - com.donald.demo.temporaldemoserver.namespace.workflows.ManageNamespaceImpl
           - com.donald.demo.temporaldemoserver.namespace.workflows.DeleteNamespaceImpl
+          - com.donald.demo.temporaldemoserver.namespace.workflows.ScheduleNamesapceCertRotationImpl
 #        activity-beans:
-#          - com.donald.demo.temporaldemoserver.namespace.activities.CertificateManagementImpl
+#          - certificateManagementImpl
+#          - namespaceManagementImpl
+
+
+      - name: OpsActivityDemoWorker
+        task-queue: ManageNamespaceActivityTaskQueue
+        activity-beans:
+          - certificateManagementImpl
+          - namespaceManagementImpl
 
 #      - task-queue: ManageNamespaceActivityTaskQueue
 #        name: OpsActivityDemoWorker    

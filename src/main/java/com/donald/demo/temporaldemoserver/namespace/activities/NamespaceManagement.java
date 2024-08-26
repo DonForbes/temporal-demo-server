@@ -22,7 +22,6 @@ public interface NamespaceManagement {
    
     @ActivityMethod
     public String emailFailure(CloudOperationsNamespace cloudOpsNamespace);
-   
 
     @ActivityMethod
     public String deleteNamespace(CloudOperationsNamespace cloudOpsNamespace, String apiKey);

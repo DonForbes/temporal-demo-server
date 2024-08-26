@@ -24,7 +24,7 @@ import io.temporal.failure.ApplicationFailure;
 import io.temporal.spring.boot.ActivityImpl;
 
 @Component
-@ActivityImpl(taskQueues = "ManageNamespaceTaskQueue")
+@ActivityImpl
 public class NamespaceManagementImpl implements NamespaceManagement {
     private static final Logger logger = LoggerFactory.getLogger(AccountTransferActivitiesImpl.class);
     @Autowired
@@ -100,8 +100,31 @@ public class NamespaceManagementImpl implements NamespaceManagement {
 
     @Override
     public String updateNamespace(CloudOperationsNamespace cloudOpsNamespace, String apiKey) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'updateNamespace'");
+        logger.debug("methodEntry - updateNamespace for Namespace [{}]", cloudOpsNamespace.getName());
+        URI uri = UriComponentsBuilder
+            .fromUriString("{baseURI}/namespace/{namespaceName}")
+            .buildAndExpand(cloudOpsServerConfig.getBaseURI(), cloudOpsNamespace.getName())
+            .toUri();
+
+        logger.debug("The URI to be used is[{}]", uri.toString());
+
+
+        try {
+            ResponseEntity<Void> response = RestClient.create().post()
+                    .uri(uri)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .header("Authorization", "Bearer " + apiKey)
+                    .body(cloudOpsNamespace)
+                    .retrieve()
+                    .toBodilessEntity();
+            }
+            catch (RestClientException ex)
+            {
+                logger.debug("Failed to update the namespace to the Temporal Operations [{}] ", ex.getMessage());
+                return "Failed to update namespace [" + ex.getMessage() + "]";
+            }
+
+        return "Namespace [" + cloudOpsNamespace.getName() + "] is being updated.";
     }
 
     @Override

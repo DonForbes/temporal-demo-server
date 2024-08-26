@@ -16,7 +16,7 @@ import com.donald.demo.temporaldemoserver.transfermoney.AccountTransferActivitie
 import io.temporal.spring.boot.ActivityImpl;
 
 @Component
-@ActivityImpl(taskQueues = "ManageNamespaceTaskQueue")
+@ActivityImpl()
 public class CertificateManagementImpl implements CertificateManagement {
     private static final Logger logger = LoggerFactory.getLogger(AccountTransferActivitiesImpl.class);
     @Autowired
