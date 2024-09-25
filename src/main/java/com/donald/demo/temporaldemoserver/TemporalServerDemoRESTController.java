@@ -68,6 +68,7 @@ public class TemporalServerDemoRESTController {
 
    // this.registerWorker("TransferMoneyDemoTaskQueue", TransferMoneyWorkflowImpl.class);
     logger.info(transferRequest.toString());
+    
     transferRequest.setToAccountAsString(null);
 
     String workflowID = IdGenerator.generateWorkflowId();
