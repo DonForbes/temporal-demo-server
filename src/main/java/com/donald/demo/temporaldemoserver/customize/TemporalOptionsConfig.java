@@ -13,6 +13,8 @@ import io.temporal.spring.boot.WorkerOptionsCustomizer;
 import io.temporal.worker.WorkerFactoryOptions;
 import io.temporal.worker.WorkerOptions;
 import io.temporal.worker.WorkflowImplementationOptions;
+import io.temporal.worker.tuning.ResourceBasedControllerOptions;
+import io.temporal.worker.tuning.ResourceBasedTuner;
 import jakarta.annotation.Nonnull;
 import java.util.Collections;
 
@@ -30,11 +32,12 @@ public class TemporalOptionsConfig {
           @Nonnull String workerName,
           @Nonnull String taskQueue) {
 
-        // For CustomizeTaskQueue (also name of worker) we set worker
-        // to only handle workflow tasks and local activities
-  //      if (taskQueue.equals("CustomizeTaskQueue")) {
-  //        optionsBuilder.setLocalActivityWorkerOnly(true);
-   //     }
+          // Adding the tuning option for autotuning the worker to use 75% of the memory and CPU available.
+          optionsBuilder.setWorkerTuner(
+            ResourceBasedTuner.newBuilder()
+                .setControllerOptions(ResourceBasedControllerOptions.newBuilder(0.75, 0.75)
+                                                                    .build())
+                .build());
         return optionsBuilder;
       }
     };
