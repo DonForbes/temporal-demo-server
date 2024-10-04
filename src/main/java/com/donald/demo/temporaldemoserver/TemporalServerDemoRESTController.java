@@ -22,6 +22,8 @@ import com.donald.demo.temporaldemoserver.transfermoney.model.MoneyTransfer;
 import com.donald.demo.temporaldemoserver.transfermoney.model.MoneyTransferResponse;
 import com.donald.demo.temporaldemoserver.transfermoney.util.IdGenerator;
 
+import io.temporal.common.SearchAttributeKey;
+import io.temporal.common.SearchAttributes;
 import io.temporal.api.common.v1.WorkflowExecution;
 import io.temporal.api.workflowservice.v1.DescribeWorkflowExecutionRequest;
 import io.temporal.api.workflowservice.v1.DescribeWorkflowExecutionResponse;
@@ -72,11 +74,17 @@ public class TemporalServerDemoRESTController {
     transferRequest.setToAccountAsString(null);
 
     String workflowID = IdGenerator.generateWorkflowId();
+    SearchAttributes searchAttribs = SearchAttributes.newBuilder()
+                                                     .set(SearchAttributeKey.forText("WorkflowIdText"), workflowID)
+                                                     .build();
+
+
     TransferMoneyWorkflow workflow = client.newWorkflowStub(
         TransferMoneyWorkflow.class,
         WorkflowOptions.newBuilder()
             .setTaskQueue("TransferMoneyDemoTaskQueue")
             .setWorkflowId(workflowID)
+            .setTypedSearchAttributes(searchAttribs)
             .build());
 
         
