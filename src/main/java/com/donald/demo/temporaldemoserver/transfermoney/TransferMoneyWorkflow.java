@@ -25,6 +25,9 @@ public interface TransferMoneyWorkflow {
     @SignalMethod(name = "approveTransfer")
     void approveTransfer();
 
+    @SignalMethod(name = "approveTransferBoolean")
+    void approveTransfer(boolean approvalResult);
+
     @UpdateMethod
     String approveTransferUpdate();
 

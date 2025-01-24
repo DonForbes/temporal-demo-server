@@ -72,6 +72,9 @@ public class CryptCodec implements PayloadCodec {
       String keyId;
       try {
         keyId = payload.getMetadataOrThrow(METADATA_ENCRYPTION_KEY_ID_KEY).toString(UTF_8);
+//      Hard wiring to the keyID in this class.   Better to take from metadata but looks like the codec server returns sa-demo-key in the metadata.  
+//      for simplicity overriding here.
+        keyId = getKeyId();  
       } catch (Exception e) {
         throw new PayloadCodecException(e);
       }

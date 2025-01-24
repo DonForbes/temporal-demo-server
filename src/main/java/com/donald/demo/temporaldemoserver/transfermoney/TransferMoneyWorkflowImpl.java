@@ -1,9 +1,13 @@
 package com.donald.demo.temporaldemoserver.transfermoney;
 
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.Optional;
 
 import org.apache.catalina.util.ServerInfo;
 import org.slf4j.Logger;
@@ -23,24 +27,35 @@ import io.temporal.failure.ActivityFailure;
 import io.temporal.failure.ApplicationFailure;
 import io.temporal.internal.worker.WorkflowExecutionException;
 import io.temporal.spring.boot.WorkflowImpl;
+import io.temporal.spring.boot.autoconfigure.properties.TemporalProperties;
+import io.temporal.spring.boot.autoconfigure.properties.WorkerProperties;
 import io.temporal.workflow.Workflow;
 
 @WorkflowImpl(taskQueues = "TransferMoneyDemoTaskQueue")
-public class TransferMoneyWorkflowImpl implements TransferMoneyWorkflow {
+public class TransferMoneyWorkflowImpl implements TransferMoneyWorkflow, ApplicationContextAware {
     private MoneyTransferState moneyTransferState = new MoneyTransferState();
     
     public static final Logger logger = Workflow.getLogger(TransferMoneyWorkflowImpl.class);
-
-    private AccountTransferActivities activity = Workflow.newActivityStub(
-            AccountTransferActivities.class,
-            ActivityOptions.newBuilder().setStartToCloseTimeout(Duration.ofSeconds(120)).build());
-
+    private ApplicationContext ctx;
+            
     @Override
     public MoneyTransferResponse transfer(MoneyTransfer moneyTransfer) {
         logger.debug(("Entered - transfer method started."));
         moneyTransferState.setProgressPercentage(10);
         moneyTransferState.setWorkflowStatus("RUNNING");
         moneyTransferState.setWorkflowId(Workflow.getInfo().getWorkflowId());
+
+        // Parse the config to pick out the task queue for the activity. (Will be simpler once issue #1647 implemented)
+        TemporalProperties props = ctx.getBean(TemporalProperties.class);
+        Optional<WorkerProperties> wp =
+              props.getWorkers().stream().filter(w -> w.getName().equals("TransferMoneyActivityWorker")).findFirst();
+        String taskQueue = wp.get().getTaskQueue();
+        AccountTransferActivities activity = Workflow.newActivityStub(
+            AccountTransferActivities.class,
+            ActivityOptions.newBuilder()
+                             .setStartToCloseTimeout(Duration.ofSeconds(120))
+                             .setTaskQueue(taskQueue)
+                             .build());
       
         Workflow.sleep(Duration.ofSeconds(5));
 
@@ -135,6 +150,12 @@ public class TransferMoneyWorkflowImpl implements TransferMoneyWorkflow {
 
     @Override
     public void approveTransfer() {
+        logger.info("approveTransferSignal with no arguments sent.");
+        this.moneyTransferState.setApprovedTime(IdGenerator.returnFormattedWorkflowDate("dd MMM yyyy HH:mm:ss"));
+    }
+    @Override
+    public void approveTransfer(boolean approvalResult) {
+        logger.info("approveTransferSignal with boolean sent.");
         this.moneyTransferState.setApprovedTime(IdGenerator.returnFormattedWorkflowDate("dd MMM yyyy HH:mm:ss"));
     }
 
@@ -149,5 +170,13 @@ public class TransferMoneyWorkflowImpl implements TransferMoneyWorkflow {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'approveTransferUpdateValidator'");
     }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        ctx = applicationContext;
+    }
+
+
+
 
 }

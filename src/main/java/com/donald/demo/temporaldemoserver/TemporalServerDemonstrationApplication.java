@@ -20,7 +20,7 @@ public class TemporalServerDemonstrationApplication {
 	}
 
 // Addition to allow looking at the beans created.  (Useful for setup of worker activity-bean config)
-/**
+/**  
 	@Bean
     public CommandLineRunner commandLineRunner(ApplicationContext ctx) {
     return args -> {
@@ -34,6 +34,8 @@ public class TemporalServerDemonstrationApplication {
       }
     };
   }
-*/    
+*/
+
+  
 
 }

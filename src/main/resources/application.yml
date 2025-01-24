@@ -29,21 +29,29 @@ spring:
         cert-chain-file: /Users/donald/stuff/source/certificates/temporal-client-leaf.pem
     # (Note following configuration are not set by default but serve more as reference)
     workers:
-      - task-queue: HelloDemoTaskQueue
-        name: HelloDemoWorker
+      - name: HelloDemoWorker
+        task-queue: HelloDemoTaskQueue     
         workflow-classes:
           - com.donald.demo.temporaldemoserver.hello.HelloWorkflowImpl
+        activity-beans:
+          - helloActivityImpl
         capacity:
-          max-concurrent-workflow-task-pollers: 6
-          max-concurrent-activity-task-pollers: 6
+          max-concurrent-workflow-task-pollers: 15
+          max-concurrent-activity-task-pollers: 15
         rate-limits:                                   #  server side rate limiting
-          max-worker-activities-per-second: 3
-          max-task-queue-activities-per-second: 3
+          max-worker-activities-per-second: 60
+          max-task-queue-activities-per-second: 60
 
       - task-queue: TransferMoneyDemoTaskQueue
         name: TransferDemoWorker
         workflow-classes:
           - com.donald.demo.temporaldemoserver.transfermoney.TransferMoneyWorkflowImpl
+
+      - name: TransferMoneyActivityWorker
+        task-queue: TransferMoneyDemoActivityTaskQueue
+        activity-beans:
+          - accountTransferActivitiesImpl
+
 
       - name: OpsWFDemoWorker
         task-queue: ManageNamespaceTaskQueue

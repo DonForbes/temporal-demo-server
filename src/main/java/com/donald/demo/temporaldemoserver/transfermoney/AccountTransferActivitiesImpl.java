@@ -16,8 +16,10 @@ import io.temporal.activity.Activity;
 import io.temporal.activity.ActivityExecutionContext;
 import io.temporal.activity.ActivityInfo;
 
-@Component
-@ActivityImpl(taskQueues = "TransferMoneyDemoTaskQueue")
+
+//@ActivityImpl(taskQueues = "TransferMoneyDemoTaskQueue")
+@Component  
+@ActivityImpl
 public class AccountTransferActivitiesImpl implements AccountTransferActivities {
   private static final Logger log = LoggerFactory.getLogger(AccountTransferActivitiesImpl.class);
 
@@ -41,6 +43,7 @@ public class AccountTransferActivitiesImpl implements AccountTransferActivities 
 
     @Override
     public boolean withdraw(MoneyTransfer moneyTransfer) {
+  
         log.debug("Witdraw for input details of [" + moneyTransfer.toString() + "]");
 
         if (moneyTransfer.getWorkflowOption().equals(ExecutionScenario.API_DOWNTIME))  //  Going to try things 5 times.
@@ -70,6 +73,7 @@ public class AccountTransferActivitiesImpl implements AccountTransferActivities 
 
     @Override
     public boolean deposit(MoneyTransfer moneyTransfer) {
+        
         log.debug("Deposit for input details of [" + moneyTransfer.toString() + "]");
         try {
             Thread.sleep(1000);
